@@ -4,6 +4,7 @@ import multer from 'multer';
 import {
   getCat,
   getCatById,
+  getCatsByUserId,
   postCat,
   putCat,
   deleteCat,
@@ -16,6 +17,8 @@ const upload = multer({dest: 'uploads/'});
 catRouter.route('/').get(getCat);
 
 catRouter.post('/', upload.single('cat'), postCat);
+
+catRouter.get('/user/:id', getCatsByUserId);
 
 catRouter
   .route('/:id')
