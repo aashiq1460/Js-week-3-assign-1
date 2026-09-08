@@ -1,3 +1,5 @@
+import bcrypt from 'bcrypt';
+
 import {
   listAllUsers,
   findUserById,
@@ -6,51 +8,57 @@ import {
   removeUser,
 } from '../models/user-model.js';
 
-const getUser = (req, res) => {
-  res.json(listAllUsers());
-};
-
-const getUserById = (req, res) => {
-  const user = findUserById(req.params.id);
-
-  if (user) {
-    res.json(user);
-  } else {
-    res.sendStatus(404);
+const getUser = async (req, res, next) => {
+  try {
+    const users = await listAllUsers();
+    res.json(users);
+  } catch (error) {
+    next(error);
   }
 };
 
-import bcrypt from 'bcrypt';
-
-const postUser = async (req, res) => {
+const getUserById = async (req, res, next) => {
   try {
-    req.body.password = bcrypt.hashSync(req.body.password, 10);
+    const user = await findUserById(req.params.id);
+
+    if (!user) {
+      const error = new Error('User not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const postUser = async (req, res, next) => {
+  try {
+    req.body.password = await bcrypt.hash(req.body.password, 10);
 
     const result = await addUser(req.body);
 
-    if (result) {
-      res.status(201).json({
-        message: 'New user added.',
-        result,
-      });
-    } else {
-      res.sendStatus(400);
+    if (!result) {
+      const error = new Error('Could not add user');
+      error.status = 400;
+      return next(error);
     }
+
+    res.status(201).json({
+      message: 'New user added.',
+      result,
+    });
   } catch (error) {
-    console.error(error);
-
     if (error.code === 'ER_DUP_ENTRY') {
-      res.status(409).json({
-        message: 'Username already exists.',
-      });
-      return;
+      error.status = 409;
     }
 
-    res.sendStatus(500);
+    next(error);
   }
 };
 
-const putUser = async (req, res) => {
+const putUser = async (req, res, next) => {
   try {
     const loggedInUser = res.locals.user;
     const userId = Number(req.params.id);
@@ -59,24 +67,28 @@ const putUser = async (req, res) => {
       loggedInUser.user_id !== userId &&
       loggedInUser.role !== 'admin'
     ) {
-      return res.sendStatus(403);
+      const error = new Error('Not allowed to update this user');
+      error.status = 403;
+      return next(error);
     }
 
     const result = await modifyUser(req.body, req.params.id);
 
-    if (result) {
-      res.json({
-        message: 'User updated.',
-      });
-    } else {
-      res.sendStatus(400);
+    if (!result) {
+      const error = new Error('Could not update user');
+      error.status = 400;
+      return next(error);
     }
+
+    res.json({
+      message: 'User updated.',
+    });
   } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
+    next(error);
   }
 };
-const deleteUser = async (req, res) => {
+
+const deleteUser = async (req, res, next) => {
   try {
     const loggedInUser = res.locals.user;
     const userId = Number(req.params.id);
@@ -85,21 +97,24 @@ const deleteUser = async (req, res) => {
       loggedInUser.user_id !== userId &&
       loggedInUser.role !== 'admin'
     ) {
-      return res.sendStatus(403);
+      const error = new Error('Not allowed to delete this user');
+      error.status = 403;
+      return next(error);
     }
 
     const result = await removeUser(req.params.id);
 
-    if (result) {
-      res.json({
-        message: 'User deleted.',
-      });
-    } else {
-      res.sendStatus(400);
+    if (!result) {
+      const error = new Error('Could not delete user');
+      error.status = 400;
+      return next(error);
     }
+
+    res.json({
+      message: 'User deleted.',
+    });
   } catch (error) {
-    console.error(error);
-    res.sendStatus(500);
+    next(error);
   }
 };
 

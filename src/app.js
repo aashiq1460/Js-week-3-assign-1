@@ -1,3 +1,7 @@
+import {
+  notFoundHandler,
+  errorHandler,
+} from './middlewares/error-handlers.js';
 import express from 'express';
 import api from './api/index.js';
 import cors from 'cors';
@@ -15,5 +19,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/v1', api);
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
