@@ -1,6 +1,8 @@
 import express from 'express';
 import multer from 'multer';
 
+import {authenticateToken} from '../../middlewares/authentication.js';
+
 import {
   getCat,
   getCatById,
@@ -23,7 +25,7 @@ catRouter.get('/user/:id', getCatsByUserId);
 catRouter
   .route('/:id')
   .get(getCatById)
-  .put(putCat)
-  .delete(deleteCat);
+  .put(authenticateToken, putCat)
+  .delete(authenticateToken, deleteCat);
 
 export default catRouter;

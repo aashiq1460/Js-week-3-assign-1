@@ -86,6 +86,21 @@ const removeUser = async (id) => {
     connection.release();
   }
 };
+const findUserByUsername = async (username) => {
+  const sql = `
+    SELECT *
+    FROM wsk_users
+    WHERE username = ?
+  `;
+
+  const [rows] = await promisePool.execute(sql, [username]);
+
+  if (rows.length === 0) {
+    return false;
+  }
+
+  return rows[0];
+};
 
 export {
   listAllUsers,
@@ -93,4 +108,5 @@ export {
   addUser,
   modifyUser,
   removeUser,
+  findUserByUsername,
 };
